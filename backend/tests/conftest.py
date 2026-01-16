@@ -1,5 +1,6 @@
 """Pytest fixtures for testing."""
 import asyncio
+import os
 from typing import AsyncGenerator
 
 import pytest
@@ -9,10 +10,18 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.database import Base, get_db
 from app.main import app
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-# Use SQLite for testing (in-memory)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+# Use test PostgreSQL database (can be overridden by TEST_DATABASE_URL env var)
+# For CI, use a dedicated test database; for local, use Docker PostgreSQL
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    # Default to localhost but require env var or .env for password if needed in CI
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/inventory_test"
+)
 
 
 @pytest.fixture(scope="session")

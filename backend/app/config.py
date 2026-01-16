@@ -6,8 +6,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Database - SQLite for local dev, PostgreSQL for production
-    DATABASE_URL: str = "sqlite+aiosqlite:///./inventory.db"
+    # Database - PostgreSQL required
+    DATABASE_URL: str
     
     # Application
     APP_NAME: str = "Inventory & Order Management Service"

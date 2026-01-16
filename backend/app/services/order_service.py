@@ -39,8 +39,7 @@ class OrderService:
         2. Stock is atomically decremented
         3. No overselling occurs even under high concurrency
         
-        Note: SELECT FOR UPDATE is only used with PostgreSQL. SQLite uses
-        database-level locking which provides similar guarantees for local dev.
+        Uses PostgreSQL's SELECT FOR UPDATE for row-level locking.
         
         Args:
             db: Database session
@@ -63,13 +62,13 @@ class OrderService:
         
         product_ids = list(product_quantities.keys())
         
-        # Build query - use FOR UPDATE only for PostgreSQL
-        stmt = select(Product).where(Product.id.in_(product_ids))
-        
-        # Check if using PostgreSQL (supports row-level locking)
-        dialect_name = db.bind.dialect.name if db.bind else ""
-        if dialect_name == "postgresql":
-            stmt = stmt.with_for_update()  # Row-level locking for PostgreSQL
+        # Lock products with FOR UPDATE to prevent concurrent modifications
+        # This is critical for preventing race conditions and overselling
+        stmt = (
+            select(Product)
+            .where(Product.id.in_(product_ids))
+            .with_for_update()  # Row-level locking
+        )
         
         result = await db.execute(stmt)
         products = {p.id: p for p in result.scalars().all()}
